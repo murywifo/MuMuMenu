@@ -52,8 +52,8 @@ CloseBtn.TextSize = 18
 CloseBtn.Parent = MainFrame
 
 CloseBtn.MouseButton1Click:Connect(function()
-MainFrame.Visible = false
-OpenBtn.Visible = true
+    MainFrame.Visible = false
+    OpenBtn.Visible = true
 end)
 
 -- Botão abrir menu
@@ -66,17 +66,17 @@ OpenBtn.Parent = ScreenGui
 OpenBtn.Visible = false
 
 OpenBtn.MouseButton1Click:Connect(function()
-MainFrame.Visible = true
-OpenBtn.Visible = false
+    MainFrame.Visible = true
+    OpenBtn.Visible = false
 end)
 
 -- Tecla Control para abrir/fechar menu
 UserInputService.InputBegan:Connect(function(input, gpe)
-if gpe then return end
-if input.KeyCode == Enum.KeyCode.LeftControl then
-MainFrame.Visible = not MainFrame.Visible
-OpenBtn.Visible = not MainFrame.Visible
-end
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        MainFrame.Visible = not MainFrame.Visible
+        OpenBtn.Visible = not MainFrame.Visible
+    end
 end)
 
 -- Infinity Jump botão
@@ -91,17 +91,17 @@ InfJumpBtn.Parent = MainFrame
 InfinityJumpEnabled = false
 
 InfJumpBtn.MouseButton1Click:Connect(function()
-InfinityJumpEnabled = not InfinityJumpEnabled
-InfJumpBtn.Text = "Infinity Jump: " .. (InfinityJumpEnabled and "ON" or "OFF")
+    InfinityJumpEnabled = not InfinityJumpEnabled
+    InfJumpBtn.Text = "Infinity Jump: " .. (InfinityJumpEnabled and "ON" or "OFF")
 end)
 
 UserInputService.JumpRequest:Connect(function()
-if InfinityJumpEnabled and LocalPlayer.Character then
-local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-if humanoid then
-humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-end
-end
+    if InfinityJumpEnabled and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
 end)
 
 -- ESP botão
@@ -116,8 +116,8 @@ ESPBtn.Parent = MainFrame
 ESPEnabled = false
 
 ESPBtn.MouseButton1Click:Connect(function()
-ESPEnabled = not ESPEnabled
-ESPBtn.Text = "ESP: " .. (ESPEnabled and "ON" or "OFF")
+    ESPEnabled = not ESPEnabled
+    ESPBtn.Text = "ESP: " .. (ESPEnabled and "ON" or "OFF")
 end)
 
 -- AIMBOT botão
@@ -132,8 +132,8 @@ AimBtn.Parent = MainFrame
 AimbotEnabled = false
 
 AimBtn.MouseButton1Click:Connect(function()
-AimbotEnabled = not AimbotEnabled
-AimBtn.Text = "AIMBOT: " .. (AimbotEnabled and "ON" or "OFF")
+    AimbotEnabled = not AimbotEnabled
+    AimBtn.Text = "AIMBOT: " .. (AimbotEnabled and "ON" or "OFF")
 end)
 
 -- FOV textbox
@@ -147,130 +147,125 @@ FOVBox.ClearTextOnFocus = false
 FOVBox.Parent = MainFrame
 
 FOVBox.FocusLost:Connect(function()
-local val = tonumber(FOVBox.Text)
-if val and val >= 1 and val <= 180 then
-FOV = val
-else
-FOVBox.Text = tostring(FOV)
-end
+    local val = tonumber(FOVBox.Text)
+    if val and val >= 1 and val <= 180 then
+        FOV = val
+    else
+        FOVBox.Text = tostring(FOV)
+    end
 end)
 
 -- ESP Drawing
 local espBoxes = {}
 
 local function createESPForPlayer(player)
-if espBoxes[player] then return end
-local box = Drawing.new("Square")
-box.Thickness = 1
-box.Filled = false
-box.Visible = false
-box.ZIndex = 2
-local outline = Drawing.new("Square")
-outline.Thickness = 3
-outline.Filled = false
-outline.Color = Color3.new(0, 0, 0)
-outline.Visible = false
-outline.ZIndex = 1
-espBoxes[player] = {Box = box, Outline = outline}
+    if espBoxes[player] then return end
+    local box = Drawing.new("Square")
+    box.Thickness = 1
+    box.Filled = false
+    box.Visible = false
+    box.ZIndex = 2
+    local outline = Drawing.new("Square")
+    outline.Thickness = 3
+    outline.Filled = false
+    outline.Color = Color3.new(0, 0, 0)
+    outline.Visible = false
+    outline.ZIndex = 1
+    espBoxes[player] = {Box = box, Outline = outline}
 end
 
 local function removeESPForPlayer(player)
-if espBoxes[player] then
-espBoxes[player].Box:Remove()
-espBoxes[player].Outline:Remove()
-espBoxes[player] = nil
-end
+    if espBoxes[player] then
+        espBoxes[player].Box:Remove()
+        espBoxes[player].Outline:Remove()
+        espBoxes[player] = nil
+    end
 end
 
 local function updateESP()
-for player, drawings in pairs(espBoxes) do
-if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") or player == LocalPlayer then
-drawings.Box.Visible = false
-drawings.Outline.Visible = false
-continue
-end
-if TeamCheckESP and player.Team == LocalPlayer.Team then
-drawings.Box.Visible = false
-drawings.Outline.Visible = false
-continue
-end
+    for player, drawings in pairs(espBoxes) do
+        if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") or player == LocalPlayer then
+            drawings.Box.Visible = false
+            drawings.Outline.Visible = false
+            continue
+        end
+        if TeamCheckESP and player.Team == LocalPlayer.Team then
+            drawings.Box.Visible = false
+            drawings.Outline.Visible = false
+            continue
+        end
 
-local root = player.Character.HumanoidRootPart
-local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
-if onScreen then
-local distance = (root.Position - Camera.CFrame.Position).Magnitude
-local scale = 200 / distance
-local size = Vector2.new(30, 60) * scale
+        local root = player.Character.HumanoidRootPart
+        local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
+        if onScreen then
+            local distance = (root.Position - Camera.CFrame.Position).Magnitude
+            local scale = 200 / distance
+            local size = Vector2.new(30, 60) * scale
 
-drawings.Box.Size = size    
-    drawings.Box.Position = Vector2.new(pos.X - size.X / 2, pos.Y - size.Y / 2)    
-    drawings.Box.Color = player.Team == LocalPlayer.Team and AllyColor or EnemyColor    
-    drawings.Box.Visible = ESPEnabled    
+            drawings.Box.Size = size
+            drawings.Box.Position = Vector2.new(pos.X - size.X / 2, pos.Y - size.Y / 2)
+            drawings.Box.Color = player.Team == LocalPlayer.Team and AllyColor or EnemyColor
+            drawings.Box.Visible = ESPEnabled
 
-    drawings.Outline.Size = size    
-    drawings.Outline.Position = drawings.Box.Position    
-    drawings.Outline.Visible = ESPEnabled    
-else    
-    drawings.Box.Visible = false    
-    drawings.Outline.Visible = false    
-end
-
-end
-
+            drawings.Outline.Size = size
+            drawings.Outline.Position = drawings.Box.Position
+            drawings.Outline.Visible = ESPEnabled
+        else
+            drawings.Box.Visible = false
+            drawings.Outline.Visible = false
+        end
+    end
 end
 
 -- Criar ESP para jogadores já presentes
 for _, p in pairs(Players:GetPlayers()) do
-if p ~= LocalPlayer then
-createESPForPlayer(p)
-end
+    if p ~= LocalPlayer then
+        createESPForPlayer(p)
+    end
 end
 
 Players.PlayerAdded:Connect(function(p)
-createESPForPlayer(p)
+    createESPForPlayer(p)
 end)
 
 Players.PlayerRemoving:Connect(function(p)
-removeESPForPlayer(p)
+    removeESPForPlayer(p)
 end)
 
 -- Encontrar inimigo mais próximo dentro do FOV para AIMBOT
 local function getClosestEnemy()
-local closest = nil
-local shortestDist = FOV
-local mousePos = UserInputService:GetMouseLocation()
+    local closest = nil
+    local shortestDist = FOV
+    local mousePos = UserInputService:GetMouseLocation()
 
-for _, player in pairs(Players:GetPlayers()) do
-if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-if player.Team == LocalPlayer.Team then
-continue
-end
-local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
-if onScreen then
-local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(mousePos.X, mousePos.Y)).Magnitude
-if dist < shortestDist then
-shortestDist = dist
-closest = player
-end
-end
-end
-end
-return closest
-
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            if player.Team == LocalPlayer.Team then
+                continue
+            end
+            local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
+            if onScreen then
+                local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(mousePos.X, mousePos.Y)).Magnitude
+                if dist < shortestDist then
+                    shortestDist = dist
+                    closest = player
+                end
+            end
+        end
+    end
+    return closest
 end
 
 -- Loop de atualização
 RunService.RenderStepped:Connect(function()
-updateESP()
+    updateESP()
 
-if AimbotEnabled then
-local target = getClosestEnemy()
-if target and target.Character and target.Character:FindFirstChild("Head") then
-Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
-end
-end
-
+    if AimbotEnabled then
+        local target = getClosestEnemy()
+        if target and target.Character and target.Character:FindFirstChild("Head") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+        end
+    end
 end)
 
 print("[MuMuMenu] Script carregado com sucesso!")
-
