@@ -1,25 +1,34 @@
-
 local player = game.Players.LocalPlayer
+if not player then
+    warn("LocalPlayer não encontrado! Execute esse script em um LocalScript.")
+    return
+end
+
 local playerGui = player:WaitForChild("PlayerGui")
 local workspace = game:GetService("Workspace")
 local runService = game:GetService("RunService")
 local uis = game:GetService("UserInputService")
 
+-- Criar ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MuMuMenuGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
+-- Criar menu
 local menuFrame = Instance.new("Frame")
 menuFrame.Size = UDim2.new(0, 350, 0, 420)
 menuFrame.Position = UDim2.new(0.5, -175, 0.5, -210)
 menuFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 menuFrame.BorderSizePixel = 0
-menuFrame.Visible = false
+menuFrame.Visible = true -- Começa aberto para teste
 menuFrame.Parent = screenGui
 
-Instance.new("UICorner", menuFrame).CornerRadius = UDim.new(0, 12)
+local menuCorner = Instance.new("UICorner")
+menuCorner.CornerRadius = UDim.new(0, 12)
+menuCorner.Parent = menuFrame
 
+-- Botão imagem para abrir/fechar menu
 local menuButton = Instance.new("ImageButton")
 menuButton.Name = "AbrirMenu"
 menuButton.Size = UDim2.new(0, 60, 0, 60)
@@ -28,12 +37,14 @@ menuButton.BackgroundTransparency = 1
 menuButton.Image = "rbxassetid://100959264885238"
 menuButton.Parent = screenGui
 
-local menuAberto = false
+local menuAberto = true
 menuButton.MouseButton1Click:Connect(function()
     menuAberto = not menuAberto
     menuFrame.Visible = menuAberto
+    print("Menu visível:", menuAberto)
 end)
 
+-- Função para criar botões arredondados
 local function criarBotao(nome, posY, texto)
     local botao = Instance.new("TextButton")
     botao.Name = nome
@@ -53,9 +64,7 @@ local function criarBotao(nome, posY, texto)
     return botao
 end
 
-local selectedColor = Color3.fromRGB(0, 255, 0)
-local showESP = false
-
+-- ESP Dropdown
 local espDropdown = Instance.new("TextButton")
 espDropdown.Name = "ESPDropdown"
 espDropdown.Size = UDim2.new(0, 300, 0, 40)
@@ -67,7 +76,9 @@ espDropdown.Font = Enum.Font.SourceSansBold
 espDropdown.TextSize = 18
 espDropdown.Parent = menuFrame
 
-Instance.new("UICorner", espDropdown).CornerRadius = UDim.new(0, 10)
+local dropdownCorner = Instance.new("UICorner")
+dropdownCorner.CornerRadius = UDim.new(0, 10)
+dropdownCorner.Parent = espDropdown
 
 local dropdownAberto = false
 local cores = {
@@ -76,6 +87,9 @@ local cores = {
     ["Vermelho"] = Color3.fromRGB(255, 0, 0),
     ["Roxo"] = Color3.fromRGB(170, 0, 255)
 }
+
+local selectedColor = Color3.fromRGB(0, 255, 0)
+local showESP = false
 
 espDropdown.MouseButton1Click:Connect(function()
     if dropdownAberto then
@@ -92,6 +106,15 @@ espDropdown.MouseButton1Click:Connect(function()
             option.MouseButton1Click:Connect(function()
                 selectedColor = cor
                 showESP = true
+                espDropdown.Text = "ESP: "..nome
+                -- Fecha dropdown
+                for _, item in pairs(menuFrame:GetChildren()) do
+                    if item:IsA("TextButton") and item.Name:match("^ESPOption") then
+                        item:Destroy()
+                    end
+                end
+                dropdownAberto = false
+                print("ESP ativado com cor:", nome)
             end)
             yOffset = yOffset + 50
         end
@@ -99,14 +122,25 @@ espDropdown.MouseButton1Click:Connect(function()
     dropdownAberto = not dropdownAberto
 end)
 
+-- AIMBOT ativar botão
 local aimbotOn = false
-local fov = 90
+local aimbotBtn = criarBotao("AIMBOT", 280, "AIMBOT: Desativar")
+aimbotBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 
-local aimbotBtn = criarBotao("AIMBOT", 280, "AIMBOT: Ativar")
 aimbotBtn.MouseButton1Click:Connect(function()
     aimbotOn = not aimbotOn
+    if aimbotOn then
+        aimbotBtn.Text = "AIMBOT: Ativar"
+        aimbotBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    else
+        aimbotBtn.Text = "AIMBOT: Desativar"
+        aimbotBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end
+    print("AIMBOT ativo:", aimbotOn)
 end)
 
+-- FOV slider
+local fov = 90
 local fovLabel = Instance.new("TextLabel")
 fovLabel.Size = UDim2.new(0, 300, 0, 20)
 fovLabel.Position = UDim2.new(0, 25, 0, 330)
@@ -116,7 +150,10 @@ fovLabel.TextSize = 16
 fovLabel.Font = Enum.Font.SourceSans
 fovLabel.Text = "FOV: 90"
 fovLabel.Parent = menuFrame
-Instance.new("UICorner", fovLabel).CornerRadius = UDim.new(0, 8)
+
+local fovCorner = Instance.new("UICorner")
+fovCorner.CornerRadius = UDim.new(0, 8)
+fovCorner.Parent = fovLabel
 
 local sliderBar = Instance.new("Frame")
 sliderBar.Size = UDim2.new(0, 300, 0, 10)
@@ -128,7 +165,10 @@ local fill = Instance.new("Frame")
 fill.Size = UDim2.new(0.5, 0, 1, 0)
 fill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 fill.Parent = sliderBar
-Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 6)
+
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(0, 6)
+fillCorner.Parent = fill
 
 sliderBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -149,7 +189,7 @@ sliderBar.InputBegan:Connect(function(input)
     end
 end)
 
--- ESP e AIMBOT funcional com Team Check e FOV
+-- Função para achar o inimigo mais próximo no FOV com Team Check
 local function getClosestEnemy()
     local closest = nil
     local shortest = math.huge
@@ -157,7 +197,8 @@ local function getClosestEnemy()
         if target ~= player and target.Team ~= player.Team and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
             local pos = target.Character.HumanoidRootPart.Position
             local screenPos, visible = workspace.CurrentCamera:WorldToViewportPoint(pos)
-            local dist = (Vector2.new(screenPos.X, screenPos.Y) - uis:GetMouseLocation()).Magnitude
+            local mousePos = uis:GetMouseLocation()
+            local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
             if visible and dist < shortest and dist <= fov then
                 shortest = dist
                 closest = target.Character
@@ -167,20 +208,43 @@ local function getClosestEnemy()
     return closest
 end
 
+-- ESP: cria caixas simples em cima das cabeças dos jogadores
+local function criarESP(obj, color)
+    if obj:FindFirstChild("ESPBox") then return end
+    local head = obj:FindFirstChild("Head")
+    if not head then return end
+
+    local box = Instance.new("BillboardGui", head)
+    box.Name = "ESPBox"
+    box.Size = UDim2.new(0, 100, 0, 40)
+    box.AlwaysOnTop = true
+    box.Adornee = head
+
+    local frame = Instance.new("Frame", box)
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundColor3 = color
+    frame.BackgroundTransparency = 0.5
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = frame
+end
+
+-- Atualizar ESP a cada frame
 runService.RenderStepped:Connect(function()
+    -- Limpa ESP de todos
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and v:FindFirstChild("Humanoid") and v ~= player.Character then
+            local espBox = v.Head and v.Head:FindFirstChild("ESPBox")
+            if espBox then espBox:Destroy() end
+        end
+    end
+
     if showESP then
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("Model") and v:FindFirstChild("Humanoid") and v ~= player.Character then
-                if v:FindFirstChild("Head") and not v.Head:FindFirstChild("ESPBox") then
-                    local box = Instance.new("BillboardGui", v.Head)
-                    box.Name = "ESPBox"
-                    box.Size = UDim2.new(0, 100, 0, 40)
-                    box.AlwaysOnTop = true
-                    local frame = Instance.new("Frame", box)
-                    frame.Size = UDim2.new(1, 0, 1, 0)
-                    frame.BackgroundColor3 = selectedColor
-                    frame.BackgroundTransparency = 0.5
-                end
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v ~= player then
+                local cor = selectedColor
+                criarESP(v.Character, cor)
             end
         end
     end
@@ -192,3 +256,5 @@ runService.RenderStepped:Connect(function()
         end
     end
 end)
+
+print("MuMuMenu carregado com sucesso!")
