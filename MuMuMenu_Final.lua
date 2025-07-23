@@ -13,11 +13,11 @@ screenGui.Name = "MuMuMenuGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Menu frame (menor e estilizado)
+-- Menu frame com fundo preto
 local menuFrame = Instance.new("Frame")
-menuFrame.Size = UDim2.new(0, 280, 0, 420)
-menuFrame.Position = UDim2.new(0.5, -140, 0.5, -210)
-menuFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+menuFrame.Size = UDim2.new(0, 280, 0, 460)
+menuFrame.Position = UDim2.new(0.5, -140, 0.5, -230)
+menuFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 menuFrame.BorderSizePixel = 0
 menuFrame.Visible = false
 menuFrame.Parent = screenGui
@@ -86,7 +86,7 @@ local function criarBotao(nome, posY, texto)
     return botao
 end
 
--- =========== ESP ============
+-- ================= ESP =================
 
 local espOn = false
 local selectedEnemyColor = Color3.fromRGB(255, 0, 0)
@@ -123,7 +123,7 @@ espConfigBtn.MouseButton1Click:Connect(function()
     if espConfigAberto then
         esconderConfigESP()
         espConfigBtn.Text = "▼ Configurar cores ESP"
-        menuFrame.Size = UDim2.new(0, 280, 0, 420)
+        menuFrame.Size = UDim2.new(0, 280, 0, 460)
     else
         local yStart = 140
         local labelAliados = Instance.new("TextLabel")
@@ -166,12 +166,12 @@ espConfigBtn.MouseButton1Click:Connect(function()
         criarOpcaoCor("Roxo", Color3.fromRGB(170,0,255), yStart + 175, true)
 
         espConfigBtn.Text = "▲ Fechar cores ESP"
-        menuFrame.Size = UDim2.new(0, 280, 0, 530)
+        menuFrame.Size = UDim2.new(0, 280, 0, 600)
     end
     espConfigAberto = not espConfigAberto
 end)
 
--- ============ AIMBOT ===========
+-- ================= AIMBOT =================
 
 local aimbotOn = false
 local aimbotBtn = criarBotao("AIMBOT", 290, "AIMBOT: Desativado")
@@ -239,14 +239,30 @@ uis.InputChanged:Connect(function(input)
     end
 end)
 
--- =========== INFINITY JUMP ===========
+-- =============== INFINITY JUMP ===============
+
+local infinityJumpOn = false
+
+local infinityJumpBtn = criarBotao("InfinityJump", 380, "Infinity Jump: Desativado")
+infinityJumpBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+
+infinityJumpBtn.MouseButton1Click:Connect(function()
+    infinityJumpOn = not infinityJumpOn
+    if infinityJumpOn then
+        infinityJumpBtn.Text = "Infinity Jump: Ativado"
+        infinityJumpBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    else
+        infinityJumpBtn.Text = "Infinity Jump: Desativado"
+        infinityJumpBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end
+end)
 
 local jumping = false
 uis.JumpRequest:Connect(function()
-    if not jumping then
+    if infinityJumpOn and not jumping then
         jumping = true
         local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Jumping then
+        if humanoid then
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
         end
         wait(0.1)
@@ -254,24 +270,24 @@ uis.JumpRequest:Connect(function()
     end
 end)
 
--- =========== ESP & AIMBOT OTIMIZADO ===========
+-- =============== ESP & AIMBOT OTIMIZADO ===============
 
 local espObjects = {}
 local lerpSpeed = 0.15
 
-local function getClosestEnemy()
+local function getClosestPlayer()
     local closest = nil
-    local shortest = math.huge
+    local shortestDist = math.huge
     local mousePos = uis:GetMouseLocation()
-    for _, target in pairs(game.Players:GetPlayers()) do
-        if target ~= player and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            local pos = target.Character.HumanoidRootPart.Position
-            local screenPos, visible = camera:WorldToViewportPoint(pos)
+
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local screenPos, visible = camera:WorldToViewportPoint(plr.Character.Head.Position)
             if visible then
                 local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-                if dist < shortest and dist <= fov then
-                    shortest = dist
-                    closest = target.Character
+                if dist < shortestDist and dist <= fov then
+                    shortestDist = dist
+                    closest = plr.Character
                 end
             end
         end
@@ -286,6 +302,7 @@ local function criarESP(character, color)
         box.Enabled = true
         return
     end
+
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
@@ -311,7 +328,7 @@ local function criarESP(character, color)
 end
 
 local function desativarTodosESPs()
-    for character, box in pairs(espObjects) do
+    for _, box in pairs(espObjects) do
         if box and box.Parent then
             box.Enabled = false
         end
@@ -344,7 +361,7 @@ runService.RenderStepped:Connect(function()
     end
 
     if aimbotOn then
-        local target = getClosestEnemy()
+        local target = getClosestPlayer()
         if target and target:FindFirstChild("Head") then
             local targetPos = target.Head.Position
             local camPos = camera.CFrame.Position
@@ -354,4 +371,4 @@ runService.RenderStepped:Connect(function()
     end
 end)
 
-print("MuMuMenu atualizado e funcionando!")
+print("MuMuMenu atualizado com AIMBOT funcional, ESP corrigido e Infinity Jump ativável!")
