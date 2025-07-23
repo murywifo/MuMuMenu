@@ -17,16 +17,35 @@ screenGui.Parent = playerGui
 
 -- Criar menu
 local menuFrame = Instance.new("Frame")
-menuFrame.Size = UDim2.new(0, 350, 0, 460) -- mais alto para dropdown expandido
-menuFrame.Position = UDim2.new(0.5, -175, 0.5, -230)
+menuFrame.Size = UDim2.new(0, 350, 0, 550) -- altura ajustada
+menuFrame.Position = UDim2.new(0.5, -175, 0.5, -275)
 menuFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 menuFrame.BorderSizePixel = 0
-menuFrame.Visible = true -- começa aberto para teste
+menuFrame.Visible = false -- começa fechado
 menuFrame.Parent = screenGui
 
 local menuCorner = Instance.new("UICorner")
 menuCorner.CornerRadius = UDim.new(0, 12)
 menuCorner.Parent = menuFrame
+
+-- Botão fechar “X” no canto superior direito
+local closeButton = Instance.new("TextButton")
+closeButton.Text = "X"
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -35, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeButton.TextColor3 = Color3.new(1,1,1)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.TextSize = 24
+closeButton.Parent = menuFrame
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.Parent = closeButton
+
+closeButton.MouseButton1Click:Connect(function()
+    menuFrame.Visible = false
+end)
 
 -- Botão imagem para abrir/fechar menu
 local menuButton = Instance.new("ImageButton")
@@ -37,11 +56,16 @@ menuButton.BackgroundTransparency = 1
 menuButton.Image = "rbxassetid://100959264885238"
 menuButton.Parent = screenGui
 
-local menuAberto = true
 menuButton.MouseButton1Click:Connect(function()
-    menuAberto = not menuAberto
-    menuFrame.Visible = menuAberto
-    print("Menu visível:", menuAberto)
+    menuFrame.Visible = not menuFrame.Visible
+end)
+
+-- Abrir/fechar menu com tecla Control
+uis.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
+        menuFrame.Visible = not menuFrame.Visible
+    end
 end)
 
 -- Função para criar botões arredondados
@@ -64,13 +88,13 @@ local function criarBotao(nome, posY, texto)
     return botao
 end
 
--- ================== ESP Config ==================
+-- ================== ESP ==================
 
 local espOn = false
 local selectedEnemyColor = Color3.fromRGB(255, 0, 0)
 local selectedTeamColor = Color3.fromRGB(0, 255, 0)
 
-local espBtn = criarBotao("ESPToggle", 20, "ESP: Desativado")
+local espBtn = criarBotao("ESPToggle", 50, "ESP: Desativado")
 espBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 
 espBtn.MouseButton1Click:Connect(function()
@@ -85,14 +109,14 @@ espBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Botão para expandir configurações de cor ESP
-local espConfigBtn = criarBotao("ESPConfigBtn", 70, "▼ Configurar cores ESP")
+local espConfigBtn = criarBotao("ESPConfigBtn", 100, "▼ Configurar cores ESP")
 espConfigBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 
 local espConfigAberto = false
 
 local function esconderConfigESP()
     for _, obj in pairs(menuFrame:GetChildren()) do
-        if obj.Name:match("^ESPColorOption") then
+        if obj.Name:match("^ESPColorOption") or obj:IsA("TextLabel") and (obj.Text == "Cores do Time (Aliados)" or obj.Text == "Cores dos Inimigos") then
             obj:Destroy()
         end
     end
@@ -102,10 +126,10 @@ espConfigBtn.MouseButton1Click:Connect(function()
     if espConfigAberto then
         esconderConfigESP()
         espConfigBtn.Text = "▼ Configurar cores ESP"
-        menuFrame.Size = UDim2.new(0, 350, 0, 460)
+        menuFrame.Size = UDim2.new(0, 350, 0, 550)
     else
-        local yStart = 120
-        -- Time aliados
+        local yStart = 150
+        -- Label aliados
         local labelAliados = Instance.new("TextLabel")
         labelAliados.Text = "Cores do Time (Aliados)"
         labelAliados.Size = UDim2.new(0, 300, 0, 30)
@@ -149,7 +173,7 @@ espConfigBtn.MouseButton1Click:Connect(function()
         criarOpcaoCor("Roxo", Color3.fromRGB(170,0,255), yStart + 215, true)
 
         espConfigBtn.Text = "▲ Fechar cores ESP"
-        menuFrame.Size = UDim2.new(0, 350, 0, 550)
+        menuFrame.Size = UDim2.new(0, 350, 0, 720)
     end
     espConfigAberto = not espConfigAberto
 end)
@@ -224,7 +248,24 @@ uis.InputChanged:Connect(function(input)
     end
 end)
 
--- Função para achar inimigo mais próximo no FOV com Team Check
+-- ================== INFINITY JUMP ==================
+
+local jumping = false
+
+uis.JumpRequest:Connect(function()
+    if not jumping then
+        jumping = true
+        local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Jumping then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+        wait(0.1)
+        jumping = false
+    end
+end)
+
+-- ================== ESP & AIMBOT LOGIC ==================
+
 local function getClosestEnemy()
     local closest = nil
     local shortest = math.huge
@@ -243,7 +284,6 @@ local function getClosestEnemy()
     return closest
 end
 
--- Criar ESP com cores diferentes para time e inimigos
 local function criarESP(obj, color)
     if obj:FindFirstChild("ESPBox") then return end
     local head = obj:FindFirstChild("Head")
@@ -265,7 +305,6 @@ local function criarESP(obj, color)
     corner.Parent = frame
 end
 
--- Atualizar ESP e AIMBOT a cada frame
 runService.RenderStepped:Connect(function()
     -- Limpar todas as ESP antes de recriar
     for _, v in pairs(workspace:GetDescendants()) do
@@ -292,4 +331,4 @@ runService.RenderStepped:Connect(function()
     end
 end)
 
-print("MuMuMenu atualizado e carregado com sucesso!")
+print("MuMuMenu atualizado com Infinity Jump, AIMBOT, ESP, e controles funcionais!")
