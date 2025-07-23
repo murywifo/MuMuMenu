@@ -1,133 +1,160 @@
+-- MuMu Menu Script vFinal
 
---// MuMu Menu Script Finalizado (ESP, AIMBOT, Infinity Jump) //-- 
-
--- Serviços
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
-
--- Configurações
-local Settings = {
-    Aimbot = false,
-    ESP = true,
-    InfJump = false,
-    FOV = 90,
-    TeamCheck = true,
-    AllyColors = {
-        Green = Color3.fromRGB(0, 255, 0),
-        Blue = Color3.fromRGB(0, 0, 255),
+--// SETTINGS
+local settings = {
+    fov = 100,
+    aimbot_enabled = false,
+    esp_enabled = false,
+    infinity_jump_enabled = false,
+    team_check = true,
+    team_color = {
+        friend = Color3.fromRGB(0, 255, 0),
+        enemy = Color3.fromRGB(255, 0, 0)
     },
-    EnemyColors = {
-        Red = Color3.fromRGB(255, 0, 0),
-        Purple = Color3.fromRGB(128, 0, 128),
+    esp_colors = {
+        friend = Color3.fromRGB(0, 255, 0),
+        enemy = Color3.fromRGB(255, 0, 0)
     }
 }
 
--- GUI
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-ScreenGui.Name = "MuMuMenu"
-local UICorner = Instance.new("UICorner")
+--// SERVICES
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local Camera = workspace.CurrentCamera
 
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 350, 0, 420)
-Frame.Position = UDim2.new(0.5, -175, 0.5, -210)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Active = true
-Frame.Draggable = true
-UICorner:Clone().Parent = Frame
+--// UI LIB
+local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/murywifo/MuMuMenu/main/ui-lib.lua"))()
+local win = lib:Window("MuMu Menu", Color3.fromRGB(255,0,0), Enum.KeyCode.LeftControl)
 
--- Botão para abrir/fechar
-local ToggleButton = Instance.new("TextButton", ScreenGui)
-ToggleButton.Size = UDim2.new(0, 40, 0, 40)
-ToggleButton.Position = UDim2.new(0, 10, 0.5, -20)
-ToggleButton.Text = "+"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-UICorner:Clone().Parent = ToggleButton
+--// TABS
+local mainTab = win:Tab("Main")
+local espTab = win:Tab("ESP Settings")
 
-ToggleButton.MouseButton1Click:Connect(function()
-    Frame.Visible = not Frame.Visible
-end)
-
--- Elementos do menu
-local function createRoundedButton(name, yPos)
-    local button = Instance.new("TextButton", Frame)
-    button.Size = UDim2.new(0, 300, 0, 40)
-    button.Position = UDim2.new(0, 25, 0, yPos)
-    button.Text = name
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    button.TextColor3 = Color3.new(1, 1, 1)
-    UICorner:Clone().Parent = button
-    return button
+--// INFINITY JUMP
+local function toggleInfinityJump(state)
+    settings.infinity_jump_enabled = state
 end
 
-local function createSlider(yPos, min, max, default, callback)
-    local label = Instance.new("TextLabel", Frame)
-    label.Size = UDim2.new(0, 300, 0, 20)
-    label.Position = UDim2.new(0, 25, 0, yPos)
-    label.BackgroundTransparency = 1
-    label.Text = "FOV: " .. tostring(default)
-    label.TextColor3 = Color3.new(1, 1, 1)
-
-    local slider = Instance.new("TextButton", Frame)
-    slider.Size = UDim2.new(0, 300, 0, 20)
-    slider.Position = UDim2.new(0, 25, 0, yPos + 25)
-    slider.BackgroundColor3 = Color3.fromRGB(80, 0, 0)
-    UICorner:Clone().Parent = slider
-    slider.Text = ""
-
-    local drag = Instance.new("Frame", slider)
-    drag.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-    drag.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    drag.Position = UDim2.new(0, 0, 0, 0)
-    UICorner:Clone().Parent = drag
-
-    local dragging = false
-    slider.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-    end)
-    RunService.RenderStepped:Connect(function()
-        if dragging then
-            local mouse = UserInputService:GetMouseLocation().X
-            local rel = math.clamp((mouse - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
-            drag.Size = UDim2.new(rel, 0, 1, 0)
-            local value = math.floor(min + (max - min) * rel)
-            label.Text = "FOV: " .. tostring(value)
-            callback(value)
-        end
-    end)
-end
-
--- Botões
-local aimbotBtn = createRoundedButton("Toggle AIMBOT", 20)
-aimbotBtn.MouseButton1Click:Connect(function()
-    Settings.Aimbot = not Settings.Aimbot
-    aimbotBtn.Text = "Toggle AIMBOT (" .. tostring(Settings.Aimbot) .. ")"
-end)
-
-local espBtn = createRoundedButton("Toggle ESP", 70)
-espBtn.MouseButton1Click:Connect(function()
-    Settings.ESP = not Settings.ESP
-    espBtn.Text = "Toggle ESP (" .. tostring(Settings.ESP) .. ")"
-end)
-
-local infBtn = createRoundedButton("Toggle Infinity Jump", 120)
-infBtn.MouseButton1Click:Connect(function()
-    Settings.InfJump = not Settings.InfJump
-    infBtn.Text = "Toggle Infinity Jump (" .. tostring(Settings.InfJump) .. ")"
-end)
-
-createSlider(180, 10, 180, Settings.FOV, function(val)
-    Settings.FOV = val
-end)
-
--- Infinity Jump
 UserInputService.JumpRequest:Connect(function()
-    if Settings.InfJump then
-        localPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    if settings.infinity_jump_enabled then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
+mainTab:Toggle("Infinity Jump", false, function(t)
+    toggleInfinityJump(t)
+end)
+
+--// FOV SLIDER
+mainTab:Slider("Aimbot FOV", 1, 180, settings.fov, function(value)
+    settings.fov = value
+end)
+
+--// ESP + AIMBOT
+mainTab:Toggle("Enable ESP", false, function(t)
+    settings.esp_enabled = t
+end)
+
+mainTab:Toggle("Enable Aimbot", false, function(t)
+    settings.aimbot_enabled = t
+end)
+
+--// ESP COLOR SETTINGS
+espTab:Dropdown("Friend Color", {"Green", "Blue"}, function(val)
+    if val == "Green" then
+        settings.esp_colors.friend = Color3.fromRGB(0, 255, 0)
+    elseif val == "Blue" then
+        settings.esp_colors.friend = Color3.fromRGB(0, 0, 255)
+    end
+end)
+
+espTab:Dropdown("Enemy Color", {"Red", "Purple"}, function(val)
+    if val == "Red" then
+        settings.esp_colors.enemy = Color3.fromRGB(255, 0, 0)
+    elseif val == "Purple" then
+        settings.esp_colors.enemy = Color3.fromRGB(128, 0, 128)
+    end
+end)
+
+--// ESP FUNCTION
+local function createBox()
+    local box = Drawing.new("Square")
+    box.Visible = false
+    box.Color = Color3.fromRGB(255, 0, 0)
+    box.Thickness = 1
+    box.Transparency = 1
+    box.Filled = false
+    return box
+end
+
+local espBoxes = {}
+
+local function updateEsp()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+
+            if not espBoxes[player] then
+                espBoxes[player] = createBox()
+            end
+
+            local box = espBoxes[player]
+            if onScreen and settings.esp_enabled then
+                box.Size = Vector2.new(50, 65)
+                box.Position = Vector2.new(pos.X - box.Size.X/2, pos.Y - box.Size.Y/2)
+                local isFriend = player.Team == LocalPlayer.Team
+                if settings.team_check and isFriend then
+                    box.Color = settings.esp_colors.friend
+                else
+                    box.Color = settings.esp_colors.enemy
+                end
+                box.Visible = true
+            else
+                box.Visible = false
+            end
+        elseif espBoxes[player] then
+            espBoxes[player].Visible = false
+        end
+    end
+end
+
+--// AIMBOT FUNCTION
+local function getClosest()
+    local closest = nil
+    local shortest = settings.fov
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            if settings.team_check and player.Team == LocalPlayer.Team then
+                continue
+            end
+            local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
+            if onScreen then
+                local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
+                if dist < shortest then
+                    shortest = dist
+                    closest = player
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+RunService.RenderStepped:Connect(function()
+    if settings.aimbot_enabled then
+        local target = getClosest()
+        if target and target.Character and target.Character:FindFirstChild("Head") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+        end
+    end
+    if settings.esp_enabled then
+        updateEsp()
     end
 end)
