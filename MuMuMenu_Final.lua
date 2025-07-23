@@ -8,6 +8,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local workspace = game:GetService("Workspace")
 local runService = game:GetService("RunService")
 local uis = game:GetService("UserInputService")
+local camera = workspace.CurrentCamera
 
 -- Criar ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -17,8 +18,8 @@ screenGui.Parent = playerGui
 
 -- Criar menu
 local menuFrame = Instance.new("Frame")
-menuFrame.Size = UDim2.new(0, 350, 0, 550) -- altura ajustada
-menuFrame.Position = UDim2.new(0.5, -175, 0.5, -275)
+menuFrame.Size = UDim2.new(0, 350, 0, 720)
+menuFrame.Position = UDim2.new(0.5, -175, 0.5, -360)
 menuFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 menuFrame.BorderSizePixel = 0
 menuFrame.Visible = false -- começa fechado
@@ -116,7 +117,7 @@ local espConfigAberto = false
 
 local function esconderConfigESP()
     for _, obj in pairs(menuFrame:GetChildren()) do
-        if obj.Name:match("^ESPColorOption") or obj:IsA("TextLabel") and (obj.Text == "Cores do Time (Aliados)" or obj.Text == "Cores dos Inimigos") then
+        if obj.Name:match("^ESPColorOption") or (obj:IsA("TextLabel") and (obj.Text == "Cores do Time (Aliados)" or obj.Text == "Cores dos Inimigos")) then
             obj:Destroy()
         end
     end
@@ -126,7 +127,7 @@ espConfigBtn.MouseButton1Click:Connect(function()
     if espConfigAberto then
         esconderConfigESP()
         espConfigBtn.Text = "▼ Configurar cores ESP"
-        menuFrame.Size = UDim2.new(0, 350, 0, 550)
+        menuFrame.Size = UDim2.new(0, 350, 0, 720)
     else
         local yStart = 150
         -- Label aliados
@@ -173,7 +174,7 @@ espConfigBtn.MouseButton1Click:Connect(function()
         criarOpcaoCor("Roxo", Color3.fromRGB(170,0,255), yStart + 215, true)
 
         espConfigBtn.Text = "▲ Fechar cores ESP"
-        menuFrame.Size = UDim2.new(0, 350, 0, 720)
+        menuFrame.Size = UDim2.new(0, 350, 0, 900)
     end
     espConfigAberto = not espConfigAberto
 end)
@@ -196,7 +197,7 @@ aimbotBtn.MouseButton1Click:Connect(function()
     print("AIMBOT ativo:", aimbotOn)
 end)
 
--- FOV slider corrigido
+-- FOV slider
 local fov = 90
 local fovLabel = Instance.new("TextLabel")
 fovLabel.Size = UDim2.new(0, 300, 0, 20)
@@ -251,7 +252,6 @@ end)
 -- ================== INFINITY JUMP ==================
 
 local jumping = false
-
 uis.JumpRequest:Connect(function()
     if not jumping then
         jumping = true
@@ -264,36 +264,46 @@ uis.JumpRequest:Connect(function()
     end
 end)
 
--- ================== ESP & AIMBOT LOGIC ==================
+-- ================== ESP & AIMBOT LOGIC OTIMIZADO ==================
+
+local espObjects = {}
+local lerpSpeed = 0.15
 
 local function getClosestEnemy()
     local closest = nil
     local shortest = math.huge
+    local mousePos = uis:GetMouseLocation()
     for _, target in pairs(game.Players:GetPlayers()) do
         if target ~= player and target.Team ~= player.Team and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
             local pos = target.Character.HumanoidRootPart.Position
-            local screenPos, visible = workspace.CurrentCamera:WorldToViewportPoint(pos)
-            local mousePos = uis:GetMouseLocation()
-            local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-            if visible and dist < shortest and dist <= fov then
-                shortest = dist
-                closest = target.Character
+            local screenPos, visible = camera:WorldToViewportPoint(pos)
+            if visible then
+                local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                if dist < shortest and dist <= fov then
+                    shortest = dist
+                    closest = target.Character
+                end
             end
         end
     end
     return closest
 end
 
-local function criarESP(obj, color)
-    if obj:FindFirstChild("ESPBox") then return end
-    local head = obj:FindFirstChild("Head")
+local function criarESP(character, color)
+    if espObjects[character] then
+        local box = espObjects[character]
+        box.Frame.BackgroundColor3 = color
+        box.Enabled = true
+        return
+    end
+    local head = character:FindFirstChild("Head")
     if not head then return end
 
-    local box = Instance.new("BillboardGui", head)
+    local box = Instance.new("BillboardGui")
     box.Name = "ESPBox"
+    box.Adornee = head
     box.Size = UDim2.new(0, 100, 0, 40)
     box.AlwaysOnTop = true
-    box.Adornee = head
 
     local frame = Instance.new("Frame", box)
     frame.Size = UDim2.new(1, 0, 1, 0)
@@ -303,32 +313,55 @@ local function criarESP(obj, color)
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = frame
+
+    box.Frame = frame
+    box.Parent = head
+
+    espObjects[character] = box
+end
+
+local function desativarTodosESPs()
+    for character, box in pairs(espObjects) do
+        if box and box.Parent then
+            box.Enabled = false
+        end
+    end
+end
+
+local function limparESPsInativos()
+    for character, box in pairs(espObjects) do
+        if not character.Parent then
+            if box and box.Parent then
+                box:Destroy()
+            end
+            espObjects[character] = nil
+        end
+    end
 end
 
 runService.RenderStepped:Connect(function()
-    -- Limpar todas as ESP antes de recriar
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("Model") and v:FindFirstChild("Humanoid") and v ~= player.Character then
-            local espBox = v.Head and v.Head:FindFirstChild("ESPBox")
-            if espBox then espBox:Destroy() end
-        end
-    end
+    limparESPsInativos()
 
     if espOn then
-        for _, v in pairs(game.Players:GetPlayers()) do
-            if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v ~= player then
-                local cor = (v.Team == player.Team) and selectedTeamColor or selectedEnemyColor
-                criarESP(v.Character, cor)
+        for _, plr in pairs(game.Players:GetPlayers()) do
+            if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr ~= player then
+                local cor = (plr.Team == player.Team) and selectedTeamColor or selectedEnemyColor
+                criarESP(plr.Character, cor)
             end
         end
+    else
+        desativarTodosESPs()
     end
 
     if aimbotOn then
         local target = getClosestEnemy()
         if target and target:FindFirstChild("Head") then
-            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Head.Position)
+            local targetPos = target.Head.Position
+            local camPos = camera.CFrame.Position
+            local newLook = CFrame.new(camPos, targetPos)
+            camera.CFrame = camera.CFrame:Lerp(newLook, lerpSpeed)
         end
     end
 end)
 
-print("MuMuMenu atualizado com Infinity Jump, AIMBOT, ESP, e controles funcionais!")
+print("MuMuMenu completo carregado com ESP, AIMBOT, Infinity Jump, menu funcional!")
