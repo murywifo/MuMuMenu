@@ -1,70 +1,243 @@
---// MuMu Menu Script - ESP, Aimbot, Infinity Jump, UI com fundo //
+-- MuMu Menu Script Completo
 
---// Services e variáveis principais local Players = game:GetService("Players") local RunService = game:GetService("RunService") local UserInputService = game:GetService("UserInputService") local LocalPlayer = Players.LocalPlayer local Camera = workspace.CurrentCamera local Mouse = LocalPlayer:GetMouse()
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
---// Configurações local Settings = { TeamCheck = true, AllyColor = Color3.fromRGB(0, 255, 0), EnemyColor = Color3.fromRGB(255, 0, 0), AimbotEnabled = false, FOV = 90, InfinityJump = false }
+-- Configurações iniciais
+local ESPEnabled = false
+local AimbotEnabled = false
+local InfinityJumpEnabled = false
+local FOV = 90
+local TeamCheckESP = true
+local AllyColor = Color3.fromRGB(0, 255, 0)
+local EnemyColor = Color3.fromRGB(255, 0, 0)
 
---// ESP Box local ESP = {} function ESP:Create(player) local box = Drawing.new("Square") box.Thickness = 1 box.Filled = false box.Color = Settings.EnemyColor box.Visible = false
+-- Criar Menu UI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "MuMuMenu"
 
-local outline = Drawing.new("Square")
-outline.Thickness = 3
-outline.Filled = false
-outline.Color = Color3.new(0, 0, 0)
-outline.Visible = false
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 350, 0, 300)
+MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+MainFrame.Active = true
+MainFrame.Draggable = true
 
-ESP[player] = {Box = box, Outline = outline}
+local BgImage = Instance.new("ImageLabel", MainFrame)
+BgImage.Size = UDim2.new(1, 0, 1, 0)
+BgImage.Position = UDim2.new(0, 0, 0, 0)
+BgImage.Image = "rbxassetid://87676365321602"
+BgImage.BackgroundTransparency = 1
+BgImage.ImageTransparency = 0.3
 
+local CloseBtn = Instance.new("TextButton", MainFrame)
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -30, 0, 5)
+CloseBtn.Text = "X"
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 18
+CloseBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenBtn.Visible = true
+end)
+
+local OpenBtn = Instance.new("ImageButton", ScreenGui)
+OpenBtn.Size = UDim2.new(0, 50, 0, 50)
+OpenBtn.Position = UDim2.new(0, 10, 0.5, -25)
+OpenBtn.Image = "rbxassetid://87676365321602"
+OpenBtn.BackgroundTransparency = 1
+OpenBtn.Visible = false
+OpenBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenBtn.Visible = false
+end)
+
+-- Alternar menu com tecla Control
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        MainFrame.Visible = not MainFrame.Visible
+        OpenBtn.Visible = not MainFrame.Visible
+    end
+end)
+
+-- Infinity Jump
+local InfJumpBtn = Instance.new("TextButton", MainFrame)
+InfJumpBtn.Size = UDim2.new(0, 150, 0, 30)
+InfJumpBtn.Position = UDim2.new(0, 10, 0, 40)
+InfJumpBtn.Text = "Infinity Jump: OFF"
+InfJumpBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+local InfinityJumpEnabled = false
+InfJumpBtn.MouseButton1Click:Connect(function()
+    InfinityJumpEnabled = not InfinityJumpEnabled
+    InfJumpBtn.Text = "Infinity Jump: " .. (InfinityJumpEnabled and "ON" or "OFF")
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if InfinityJumpEnabled and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- ESP toggle
+local ESPBtn = Instance.new("TextButton", MainFrame)
+ESPBtn.Size = UDim2.new(0, 150, 0, 30)
+ESPBtn.Position = UDim2.new(0, 10, 0, 80)
+ESPBtn.Text = "ESP: OFF"
+ESPBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+local ESPEnabled = false
+ESPBtn.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    ESPBtn.Text = "ESP: " .. (ESPEnabled and "ON" or "OFF")
+end)
+
+-- AIMBOT toggle
+local AimBtn = Instance.new("TextButton", MainFrame)
+AimBtn.Size = UDim2.new(0, 150, 0, 30)
+AimBtn.Position = UDim2.new(0, 10, 0, 120)
+AimBtn.Text = "AIMBOT: OFF"
+AimBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+local AimbotEnabled = false
+AimBtn.MouseButton1Click:Connect(function()
+    AimbotEnabled = not AimbotEnabled
+    AimBtn.Text = "AIMBOT: " .. (AimbotEnabled and "ON" or "OFF")
+end)
+
+-- FOV slider textbox
+local FOVBox = Instance.new("TextBox", MainFrame)
+FOVBox.Size = UDim2.new(0, 150, 0, 30)
+FOVBox.Position = UDim2.new(0, 10, 0, 160)
+FOVBox.Text = tostring(FOV)
+FOVBox.TextColor3 = Color3.new(1,1,1)
+FOVBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+FOVBox.ClearTextOnFocus = false
+FOVBox.FocusLost:Connect(function()
+    local val = tonumber(FOVBox.Text)
+    if val and val >= 1 and val <= 180 then
+        FOV = val
+    else
+        FOVBox.Text = tostring(FOV)
+    end
+end)
+
+-- ESP Box Drawing setup
+local espBoxes = {}
+
+local function createESPForPlayer(player)
+    if espBoxes[player] then return end
+    local box = Drawing.new("Square")
+    box.Thickness = 1
+    box.Filled = false
+    box.Visible = false
+    local outline = Drawing.new("Square")
+    outline.Thickness = 3
+    outline.Filled = false
+    outline.Color = Color3.new(0,0,0)
+    outline.Visible = false
+    espBoxes[player] = {Box=box, Outline=outline}
 end
 
-function ESP:Remove(player) if ESP[player] then ESP[player].Box:Remove() ESP[player].Outline:Remove() ESP[player] = nil end end
+local function removeESPForPlayer(player)
+    if espBoxes[player] then
+        espBoxes[player].Box:Remove()
+        espBoxes[player].Outline:Remove()
+        espBoxes[player] = nil
+    end
+end
 
-function ESP:Update() for _, player in pairs(Players:GetPlayers()) do if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then if Settings.TeamCheck and player.Team == LocalPlayer.Team then ESP[player].Box.Visible = false ESP[player].Outline.Visible = false else local pos, onScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position) if onScreen then local scale = 1 / (player.Character.HumanoidRootPart.Position - Camera.CFrame.Position).Magnitude * 1000 local size = Vector2.new(60, 100) * scale local position = Vector2.new(pos.X - size.X/2, pos.Y - size.Y/2)
+-- Atualiza ESP de todos os players
+local function updateESP()
+    for player, drawings in pairs(espBoxes) do
+        if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") or player == LocalPlayer then
+            drawings.Box.Visible = false
+            drawings.Outline.Visible = false
+            continue
+        end
+        
+        if TeamCheckESP and player.Team == LocalPlayer.Team then
+            drawings.Box.Visible = false
+            drawings.Outline.Visible = false
+            continue
+        end
 
-ESP[player].Box.Size = size
-                ESP[player].Box.Position = position
-                ESP[player].Box.Color = Settings.TeamCheck and (player.Team == LocalPlayer.Team and Settings.AllyColor or Settings.EnemyColor) or Settings.EnemyColor
-                ESP[player].Box.Visible = true
+        local root = player.Character.HumanoidRootPart
+        local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
+        if onScreen then
+            local scale = 1000 / (root.Position - Camera.CFrame.Position).Magnitude
+            local size = Vector2.new(25, 45) * scale / 100
 
-                ESP[player].Outline.Size = size
-                ESP[player].Outline.Position = position
-                ESP[player].Outline.Visible = true
-            else
-                ESP[player].Box.Visible = false
-                ESP[player].Outline.Visible = false
-            end
+            drawings.Box.Size = size
+            drawings.Box.Position = Vector2.new(pos.X - size.X/2, pos.Y - size.Y/2)
+            drawings.Box.Color = player.Team == LocalPlayer.Team and AllyColor or EnemyColor
+            drawings.Box.Visible = ESPEnabled
+
+            drawings.Outline.Size = drawings.Box.Size
+            drawings.Outline.Position = drawings.Box.Position
+            drawings.Outline.Visible = ESPEnabled
+        else
+            drawings.Box.Visible = false
+            drawings.Outline.Visible = false
         end
     end
 end
 
+-- Criar ESP para todos jogadores existentes
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then
+        createESPForPlayer(p)
+    end
 end
 
-for _, p in ipairs(Players:GetPlayers()) do if p ~= LocalPlayer then ESP:Create(p) end end Players.PlayerAdded:Connect(function(p) ESP:Create(p) end) Players.PlayerRemoving:Connect(function(p) ESP:Remove(p) end)
+Players.PlayerAdded:Connect(function(p)
+    createESPForPlayer(p)
+end)
 
---// AIMBOT local function GetClosestPlayer() local closest, dist = nil, Settings.FOV for _, player in ipairs(Players:GetPlayers()) do if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position) if onScreen then local mag = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude if mag < dist then dist = mag closest = player end end end end return closest end
+Players.PlayerRemoving:Connect(function(p)
+    removeESPForPlayer(p)
+end)
 
-RunService.RenderStepped:Connect(function() if Settings.AimbotEnabled then local target = GetClosestPlayer() if target and target.Character and target.Character:FindFirstChild("Head") then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position) end end ESP:Update() end)
+-- Função para achar inimigo mais próximo no FOV para AIMBOT
+local function getClosestEnemy()
+    local closest = nil
+    local shortestDist = FOV
+    local mousePos = UserInputService:GetMouseLocation()
 
---// Infinity Jump UserInputService.JumpRequest:Connect(function() if Settings.InfinityJump then LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping") end end)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            if player.Team == LocalPlayer.Team then
+                continue
+            end
+            local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
+            if onScreen then
+                local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(mousePos.X, mousePos.Y)).Magnitude
+                if dist < shortestDist then
+                    shortestDist = dist
+                    closest = player
+                end
+            end
+        end
+    end
+    return closest
+end
 
---// UI local ScreenGui = Instance.new("ScreenGui", game.CoreGui) local Menu = Instance.new("Frame", ScreenGui) Menu.Size = UDim2.new(0, 300, 0, 240) Menu.Position = UDim2.new(0.02, 0, 0.2, 0) Menu.BackgroundColor3 = Color3.new(0, 0, 0) Menu.BorderSizePixel = 0 Menu.Visible = true Menu.Active = true Menu.Draggable = true
+-- Update loop
+RunService.RenderStepped:Connect(function()
+    updateESP()
+    
+    if AimbotEnabled then
+        local target = getClosestEnemy()
+        if target and target.Character and target.Character:FindFirstChild("Head") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+        end
+    end
+end)
 
--- Fundo com imagem local Fundo = Instance.new("ImageLabel", Menu) Fundo.Size = UDim2.new(1, 0, 1, 0) Fundo.Position = UDim2.new(0, 0, 0, 0) Fundo.Image = "rbxassetid://87676365321602" Fundo.BackgroundTransparency = 1 Fundo.ImageTransparency = 0.2
-
--- Botões local function createButton(name, pos, callback) local btn = Instance.new("TextButton", Menu) btn.Size = UDim2.new(0, 120, 0, 30) btn.Position = pos btn.BackgroundColor3 = Color3.fromRGB(255, 0, 0) btn.Text = name btn.TextColor3 = Color3.new(1,1,1) btn.Font = Enum.Font.GothamBold btn.TextSize = 14 btn.MouseButton1Click:Connect(callback) return btn end
-
-createButton("Toggle Aimbot", UDim2.new(0, 10, 0, 10), function() Settings.AimbotEnabled = not Settings.AimbotEnabled end)
-
-createButton("Toggle ESP TeamCheck", UDim2.new(0, 10, 0, 50), function() Settings.TeamCheck = not Settings.TeamCheck end)
-
-createButton("Toggle InfinityJump", UDim2.new(0, 10, 0, 90), function() Settings.InfinityJump = not Settings.InfinityJump end)
-
--- Slider FOV local FOVSlider = Instance.new("TextBox", Menu) FOVSlider.Size = UDim2.new(0, 120, 0, 30) FOVSlider.Position = UDim2.new(0, 10, 0, 130) FOVSlider.BackgroundColor3 = Color3.fromRGB(30, 30, 30) FOVSlider.Text = "FOV: " .. Settings.FOV FOVSlider.TextColor3 = Color3.new(1,1,1) FOVSlider.Font = Enum.Font.Gotham FOVSlider.TextSize = 14 FOVSlider.FocusLost:Connect(function() local val = tonumber(FOVSlider.Text:match("%d+")) if val and val <= 180 then Settings.FOV = val FOVSlider.Text = "FOV: " .. val end end)
-
--- Botão X para fechar local CloseBtn = Instance.new("TextButton", Menu) CloseBtn.Size = UDim2.new(0, 20, 0, 20) CloseBtn.Position = UDim2.new(1, -25, 0, 5) CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0) CloseBtn.Text = "X" CloseBtn.TextColor3 = Color3.new(1, 1, 1) CloseBtn.Font = Enum.Font.GothamBold CloseBtn.TextSize = 14 CloseBtn.MouseButton1Click:Connect(function() Menu.Visible = false end)
-
--- Ícone para abrir local OpenBtn = Instance.new("ImageButton", ScreenGui) OpenBtn.Size = UDim2.new(0, 50, 0, 50) OpenBtn.Position = UDim2.new(0, 10, 0, 10) OpenBtn.Image = "rbxassetid://87676365321602" OpenBtn.BackgroundTransparency = 1 OpenBtn.MouseButton1Click:Connect(function() Menu.Visible = not Menu.Visible end)
-
--- Tecla Control para abrir/fechar UserInputService.InputBegan:Connect(function(input, gpe) if not gpe and input.KeyCode == Enum.KeyCode.LeftControl then Menu.Visible = not Menu.Visible end end)
-
-print("[MuMu Menu] Carregado com sucesso.")
-
+print("[MuMuMenu] Script carregado com sucesso!")
