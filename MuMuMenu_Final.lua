@@ -17,11 +17,11 @@ screenGui.Parent = playerGui
 
 -- Criar menu
 local menuFrame = Instance.new("Frame")
-menuFrame.Size = UDim2.new(0, 350, 0, 420)
-menuFrame.Position = UDim2.new(0.5, -175, 0.5, -210)
+menuFrame.Size = UDim2.new(0, 350, 0, 460) -- mais alto para dropdown expandido
+menuFrame.Position = UDim2.new(0.5, -175, 0.5, -230)
 menuFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 menuFrame.BorderSizePixel = 0
-menuFrame.Visible = true -- Começa aberto para teste
+menuFrame.Visible = true -- começa aberto para teste
 menuFrame.Parent = screenGui
 
 local menuCorner = Instance.new("UICorner")
@@ -64,67 +64,100 @@ local function criarBotao(nome, posY, texto)
     return botao
 end
 
--- ESP Dropdown
-local espDropdown = Instance.new("TextButton")
-espDropdown.Name = "ESPDropdown"
-espDropdown.Size = UDim2.new(0, 300, 0, 40)
-espDropdown.Position = UDim2.new(0, 25, 0, 20)
-espDropdown.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-espDropdown.Text = "ESP: Selecione a Cor"
-espDropdown.TextColor3 = Color3.new(1,1,1)
-espDropdown.Font = Enum.Font.SourceSansBold
-espDropdown.TextSize = 18
-espDropdown.Parent = menuFrame
+-- ================== ESP Config ==================
 
-local dropdownCorner = Instance.new("UICorner")
-dropdownCorner.CornerRadius = UDim.new(0, 10)
-dropdownCorner.Parent = espDropdown
+local espOn = false
+local selectedEnemyColor = Color3.fromRGB(255, 0, 0)
+local selectedTeamColor = Color3.fromRGB(0, 255, 0)
 
-local dropdownAberto = false
-local cores = {
-    ["Verde"] = Color3.fromRGB(0, 255, 0),
-    ["Azul"] = Color3.fromRGB(0, 150, 255),
-    ["Vermelho"] = Color3.fromRGB(255, 0, 0),
-    ["Roxo"] = Color3.fromRGB(170, 0, 255)
-}
+local espBtn = criarBotao("ESPToggle", 20, "ESP: Desativado")
+espBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 
-local selectedColor = Color3.fromRGB(0, 255, 0)
-local showESP = false
-
-espDropdown.MouseButton1Click:Connect(function()
-    if dropdownAberto then
-        for _, item in pairs(menuFrame:GetChildren()) do
-            if item:IsA("TextButton") and item.Name:match("^ESPOption") then
-                item:Destroy()
-            end
-        end
+espBtn.MouseButton1Click:Connect(function()
+    espOn = not espOn
+    if espOn then
+        espBtn.Text = "ESP: Ativado"
+        espBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
     else
-        local yOffset = 70
-        for nome, cor in pairs(cores) do
-            local option = criarBotao("ESPOption_"..nome, yOffset, "ESP: "..nome)
-            option.BackgroundColor3 = cor
-            option.MouseButton1Click:Connect(function()
-                selectedColor = cor
-                showESP = true
-                espDropdown.Text = "ESP: "..nome
-                -- Fecha dropdown
-                for _, item in pairs(menuFrame:GetChildren()) do
-                    if item:IsA("TextButton") and item.Name:match("^ESPOption") then
-                        item:Destroy()
-                    end
-                end
-                dropdownAberto = false
-                print("ESP ativado com cor:", nome)
-            end)
-            yOffset = yOffset + 50
-        end
+        espBtn.Text = "ESP: Desativado"
+        espBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
     end
-    dropdownAberto = not dropdownAberto
 end)
 
--- AIMBOT ativar botão
+-- Botão para expandir configurações de cor ESP
+local espConfigBtn = criarBotao("ESPConfigBtn", 70, "▼ Configurar cores ESP")
+espConfigBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+
+local espConfigAberto = false
+
+local function esconderConfigESP()
+    for _, obj in pairs(menuFrame:GetChildren()) do
+        if obj.Name:match("^ESPColorOption") then
+            obj:Destroy()
+        end
+    end
+end
+
+espConfigBtn.MouseButton1Click:Connect(function()
+    if espConfigAberto then
+        esconderConfigESP()
+        espConfigBtn.Text = "▼ Configurar cores ESP"
+        menuFrame.Size = UDim2.new(0, 350, 0, 460)
+    else
+        local yStart = 120
+        -- Time aliados
+        local labelAliados = Instance.new("TextLabel")
+        labelAliados.Text = "Cores do Time (Aliados)"
+        labelAliados.Size = UDim2.new(0, 300, 0, 30)
+        labelAliados.Position = UDim2.new(0, 25, 0, yStart)
+        labelAliados.TextColor3 = Color3.new(1,1,1)
+        labelAliados.BackgroundTransparency = 1
+        labelAliados.Font = Enum.Font.SourceSansBold
+        labelAliados.TextSize = 18
+        labelAliados.Parent = menuFrame
+
+        local function criarOpcaoCor(nome, cor, posY, isEnemy)
+            local btn = criarBotao("ESPColorOption_"..nome, posY, nome)
+            btn.BackgroundColor3 = cor
+            btn.MouseButton1Click:Connect(function()
+                if isEnemy then
+                    selectedEnemyColor = cor
+                    print("Cor ESP inimigos setada para:", nome)
+                else
+                    selectedTeamColor = cor
+                    print("Cor ESP aliados setada para:", nome)
+                end
+            end)
+            btn.Parent = menuFrame
+        end
+
+        criarOpcaoCor("Verde", Color3.fromRGB(0,255,0), yStart + 35, false)
+        criarOpcaoCor("Azul", Color3.fromRGB(0,150,255), yStart + 85, false)
+
+        -- Label inimigos
+        local labelInimigos = Instance.new("TextLabel")
+        labelInimigos.Text = "Cores dos Inimigos"
+        labelInimigos.Size = UDim2.new(0, 300, 0, 30)
+        labelInimigos.Position = UDim2.new(0, 25, 0, yStart + 130)
+        labelInimigos.TextColor3 = Color3.new(1,1,1)
+        labelInimigos.BackgroundTransparency = 1
+        labelInimigos.Font = Enum.Font.SourceSansBold
+        labelInimigos.TextSize = 18
+        labelInimigos.Parent = menuFrame
+
+        criarOpcaoCor("Vermelho", Color3.fromRGB(255,0,0), yStart + 165, true)
+        criarOpcaoCor("Roxo", Color3.fromRGB(170,0,255), yStart + 215, true)
+
+        espConfigBtn.Text = "▲ Fechar cores ESP"
+        menuFrame.Size = UDim2.new(0, 350, 0, 550)
+    end
+    espConfigAberto = not espConfigAberto
+end)
+
+-- ================== AIMBOT ==================
+
 local aimbotOn = false
-local aimbotBtn = criarBotao("AIMBOT", 280, "AIMBOT: Desativar")
+local aimbotBtn = criarBotao("AIMBOT", 350, "AIMBOT: Desativar")
 aimbotBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 
 aimbotBtn.MouseButton1Click:Connect(function()
@@ -139,11 +172,11 @@ aimbotBtn.MouseButton1Click:Connect(function()
     print("AIMBOT ativo:", aimbotOn)
 end)
 
--- FOV slider
+-- FOV slider corrigido
 local fov = 90
 local fovLabel = Instance.new("TextLabel")
 fovLabel.Size = UDim2.new(0, 300, 0, 20)
-fovLabel.Position = UDim2.new(0, 25, 0, 330)
+fovLabel.Position = UDim2.new(0, 25, 0, 400)
 fovLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 fovLabel.TextColor3 = Color3.new(1,1,1)
 fovLabel.TextSize = 16
@@ -157,12 +190,12 @@ fovCorner.Parent = fovLabel
 
 local sliderBar = Instance.new("Frame")
 sliderBar.Size = UDim2.new(0, 300, 0, 10)
-sliderBar.Position = UDim2.new(0, 25, 0, 355)
+sliderBar.Position = UDim2.new(0, 25, 0, 425)
 sliderBar.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 sliderBar.Parent = menuFrame
 
 local fill = Instance.new("Frame")
-fill.Size = UDim2.new(0.5, 0, 1, 0)
+fill.Size = UDim2.new(fov/180, 0, 1, 0)
 fill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 fill.Parent = sliderBar
 
@@ -170,26 +203,28 @@ local fillCorner = Instance.new("UICorner")
 fillCorner.CornerRadius = UDim.new(0, 6)
 fillCorner.Parent = fill
 
+local sliderActive = false
 sliderBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local conn
-        conn = uis.InputChanged:Connect(function(move)
-            if move.UserInputType == Enum.UserInputType.MouseMovement then
-                local pos = math.clamp((move.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
-                fill.Size = UDim2.new(pos, 0, 1, 0)
-                fov = math.floor(pos * 180)
-                fovLabel.Text = "FOV: "..fov
-            end
-        end)
-        input.Changed:Connect(function(state)
-            if state == Enum.UserInputState.End then
-                conn:Disconnect()
-            end
-        end)
+        sliderActive = true
+    end
+end)
+sliderBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        sliderActive = false
     end
 end)
 
--- Função para achar o inimigo mais próximo no FOV com Team Check
+uis.InputChanged:Connect(function(input)
+    if sliderActive and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local pos = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
+        fill.Size = UDim2.new(pos, 0, 1, 0)
+        fov = math.floor(pos * 180)
+        fovLabel.Text = "FOV: "..fov
+    end
+end)
+
+-- Função para achar inimigo mais próximo no FOV com Team Check
 local function getClosestEnemy()
     local closest = nil
     local shortest = math.huge
@@ -208,7 +243,7 @@ local function getClosestEnemy()
     return closest
 end
 
--- ESP: cria caixas simples em cima das cabeças dos jogadores
+-- Criar ESP com cores diferentes para time e inimigos
 local function criarESP(obj, color)
     if obj:FindFirstChild("ESPBox") then return end
     local head = obj:FindFirstChild("Head")
@@ -230,9 +265,9 @@ local function criarESP(obj, color)
     corner.Parent = frame
 end
 
--- Atualizar ESP a cada frame
+-- Atualizar ESP e AIMBOT a cada frame
 runService.RenderStepped:Connect(function()
-    -- Limpa ESP de todos
+    -- Limpar todas as ESP antes de recriar
     for _, v in pairs(workspace:GetDescendants()) do
         if v:IsA("Model") and v:FindFirstChild("Humanoid") and v ~= player.Character then
             local espBox = v.Head and v.Head:FindFirstChild("ESPBox")
@@ -240,10 +275,10 @@ runService.RenderStepped:Connect(function()
         end
     end
 
-    if showESP then
+    if espOn then
         for _, v in pairs(game.Players:GetPlayers()) do
             if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v ~= player then
-                local cor = selectedColor
+                local cor = (v.Team == player.Team) and selectedTeamColor or selectedEnemyColor
                 criarESP(v.Character, cor)
             end
         end
@@ -257,4 +292,4 @@ runService.RenderStepped:Connect(function()
     end
 end)
 
-print("MuMuMenu carregado com sucesso!")
+print("MuMuMenu atualizado e carregado com sucesso!")
